@@ -1,0 +1,54 @@
+Multiple builders  (limited builder resource, end with maybe 2 or 3 builders)
+	Builder types:
+		Siege
+		Frost
+		Poison
+		Fast/Short Range
+		Crit (maybe)
+Long Upgrade Path with fairly large increments (RPGish)
+	With different forms (if art dept will allow)
+Crits/Misses
+3-1 Map style paried with...
+Creeps give more money at beginning of level
+Raised areas? (so you can put siege type weapons outside of maze?)
+Maze incentives
+"Killbox" incentives (i.e. stunlock and splash damage)
+
+
+Towers
+	Siege:
+	Frost:
+	Poison:
+	Short Range: 
+		Old Time Diver. Clearly.
+	Crit:
+
+Creep Types
+	Fast
+	Quick $ Decay
+	Frost Resist
+	Poison Resist
+	Armored/Slow
+	Big spawns Little
+	Swarm
+	Flying? (maybe hard with sea theme but probably should be a thing)
+	
+Creep Models:
+		Crab
+			Horseshoe (Armored)
+			Spider
+		Lobster
+		Snails
+		Octopus
+		Centipede (lululul)
+		Squid (flying)
+		Flounder\other bottom feeders
+		Starfish
+		Sun stars
+		Urchins (armored, poison resist)
+		Scallop (Skipping? Part Flying? Could be fun)
+		Other clams (digging? Pops up after a while? would be different from flying in that it would not always be targetable)
+		Evil Mermaids? (Flying?)
+		
+	
+
