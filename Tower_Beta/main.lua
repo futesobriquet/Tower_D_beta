@@ -57,9 +57,21 @@ function love.draw()
     love.graphics.rectangle("fill", player.x, player.y, cellSize, cellSize)
     for x=1, mapSize.x do
         for y=1, mapSize.y do
-            if walls[x][y] == 1 then
+			cell = map[x][y]
+            if cell.occupied == true then
 				love.graphics.rectangle("line", x * cellSize, y * cellSize, cellSize, cellSize)
             end
         end
     end
+end
+
+function love.mousereleased(x, y, button)
+	if button == 'l' then
+		gridX = math.floor(x/32)
+		gridY = math.floor(y/32)
+		clickedCell = map[gridX][gridY]
+		clickedCell.occupied = not clickedCell.occupied
+		path = search.findShortestPath(map[math.ceil(player.x/32)][math.ceil(player.y/32)], map[2][12],map)
+		player:setPath(path)
+	end
 end
