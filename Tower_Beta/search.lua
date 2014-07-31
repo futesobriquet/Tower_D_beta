@@ -13,7 +13,7 @@ search = {
 		while next(toSearch) ~= nil do
 			local cur = findMinInSet(fScores, visited)
 			if cur.x == goal.x and cur.y == goal.y then
-				return buildPath(cur, previous)
+				return buildPath(cur, previous, start)
 			end
 			toSearch[cur] = nil
 			visited[cur] = true
@@ -63,13 +63,14 @@ function findMinInSet(set, visited)
 	return toReturn
 end
 
-function buildPath(node, previous)
+function buildPath(node, previous, start)
 	local path = {}
 	local curNode = node
 	while curNode ~= nil do
 		table.insert(path, curNode)
 		curNode = previous[curNode]
 	end
+	table.insert(path, start)
 	local size = #path
 	local newPath = {}
 	

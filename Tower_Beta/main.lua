@@ -1,11 +1,10 @@
 local class = require('lib.30log.30log')
 require('character')
 require('cell')
-search = require('search')
 require('constants')
 
 function love.load()
-	player = Character:new(cellSize * 2, cellSize * 2,80)
+	player = Character:new(cellSize * 2, cellSize * 2,100)
 	mapSize = { x = 13, y = 13 }
 	
 	walls = {
@@ -42,24 +41,37 @@ function love.load()
             end
         end
     end
-
-	print(player.grid_x)
-	path = search.findShortestPath(map[player.grid_x][player.grid_y], map[2][12], map)
-	search.printPath(path)
-	player:setPath(path)
 end
 
 function love.update(dt)
-	player:moveAlongPath(dt)
+	player:moveAlongPath(dt, map)
 end
 
 function love.draw()
     love.graphics.rectangle("fill", player.x, player.y, cellSize, cellSize)
     for x=1, mapSize.x do
         for y=1, mapSize.y do
-            if walls[x][y] == 1 then
+			cell = map[x][y]
+            if cell.occupied == true then
 				love.graphics.rectangle("line", x * cellSize, y * cellSize, cellSize, cellSize)
-            end
+			end
         end
     end
+end
+
+function love.mousereleased(x, y, button)
+	if button == 'l' then
+		gridX = math.floor(x/32)
+		gridY = math.floor(y/32)
+		clickedCell = map[gridX][gridY]
+		clickedCell.occupied = not clickedCell.occupied
+	end
+	if button == 'r' then
+		gridX = math.floor(x/32)
+		gridY = math.floor(y/32)
+		clickedCell = map[gridX][gridY]
+		if clickedCell.occupied ~= true then
+			player:moveTo(clickedCell, map)
+		end
+	end
 end
