@@ -1,11 +1,12 @@
 local class = require('lib.30log.30log')
 require('character')
+require('tower')
 require('cell')
 search = require('search')
 require('constants')
 
 function love.load()
-	player = Character:new(cellSize * 2, cellSize * 2,80)
+	player = Character:new(cellSize * 2, cellSize * 2,80,6)
 	mapSize = { x = 13, y = 13 }
 	
 	walls = {
@@ -42,19 +43,25 @@ function love.load()
             end
         end
     end
-
-	print(player.grid_x)
+	
+	tower = Tower:new(5*cellSize,4*cellSize,3,1,2,'Normal',map)
+	towerCell = map[5][4]
+	towerCell.occupied = true
+	
+	--print(player.grid_x)
 	path = search.findShortestPath(map[player.grid_x][player.grid_y], map[2][12], map)
 	search.printPath(path)
 	player:setPath(path)
 end
 
 function love.update(dt)
+	tower:attack({player})
 	player:moveAlongPath(dt)
 end
 
 function love.draw()
-    love.graphics.rectangle("fill", player.x, player.y, cellSize, cellSize)
+    love.graphics.rectangle("line", player.x, player.y, cellSize, cellSize)
+	love.graphics.print(player.health, player.x+cellSize/4, player.y+cellSize/4)
     for x=1, mapSize.x do
         for y=1, mapSize.y do
 			cell = map[x][y]
@@ -63,6 +70,7 @@ function love.draw()
             end
         end
     end
+	love.graphics.rectangle("fill", cellSize*5, cellSize*4, cellSize, cellSize)
 end
 
 function love.mousereleased(x, y, button)
