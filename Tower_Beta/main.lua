@@ -109,7 +109,7 @@ end
 
 function updateCreepList()
 	toRemove = {}
-	for i=1,#players do
+	for i=#players,1,-1 do
 		if players[i].health == 0 then
 			table.insert(toRemove, {index = i})
 		end
