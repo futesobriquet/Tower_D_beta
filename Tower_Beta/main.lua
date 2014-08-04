@@ -3,14 +3,13 @@ require('character')
 require('cell')
 require('constants')
 require('utils.timer')
+require('tower')
 
 function love.load()
 	players = {}
-	numPlayers = 1
-	for i=1,numPlayers do
-		players[i] = Character:new(cellSize * 2, cellSize * 2, 50 + (i - 1))
-		players[i]:setImage("img/Arrow.png")
-	end
+	towers = {}
+	numPlayers = 0
+
 	mapSize = { x = 13, y = 13 }
 	
 	walls = {
@@ -47,6 +46,8 @@ function love.load()
             end
         end
     end
+	tower = Tower:new(5*cellSize,4*cellSize,3,1,2,'Normal', map, players)
+	table.insert(towers, tower)
 	timer = Timer:new(0.3, addCharacter, nil)
 	timer:start()
 end
@@ -60,18 +61,19 @@ function addCharacter()
 end
 
 function love.update(dt)
-	--timer:update(dt)
-	for i=1,numPlayers do
+	updateCreepList()
+	timer:update(dt)
+	for i=1,#players do
 		players[i]:moveAlongPath(dt, map)
-	end		
+	end	
+	for i=1,#towers do
+		towers[i]:update(dt)
+	end
 end
 
 function love.draw()
-	for i=1,numPlayers do
-		local player = players[i]
-		local width = player:getImage():getWidth()
-		local height = player:getImage():getHeight()
-		love.graphics.draw(player:getImage(), player.x + cellSize/2, player.y + cellSize/2, player:getOrientation(), 1, 1, width / 2, height / 2)
+	for i=1,#players do
+		players[i]:render()
     end
 	for x=1, mapSize.x do
         for y=1, mapSize.y do
@@ -81,6 +83,9 @@ function love.draw()
 			end
         end
     end
+	for i=1,#towers do
+		towers[i]:render()
+	end
 end
 
 function love.mousereleased(x, y, button)
@@ -95,9 +100,21 @@ function love.mousereleased(x, y, button)
 		gridY = math.floor(y/cellSize)
 		clickedCell = map[gridX][gridY]
 		if clickedCell.occupied ~= true then
-			for i=1,numPlayers do
+			for i=1,#players do
 				players[i]:moveTo(clickedCell, map)
 			end
 		end
+	end
+end
+
+function updateCreepList()
+	toRemove = {}
+	for i=1,#players do
+		if players[i].health == 0 then
+			table.insert(toRemove, {index = i})
+		end
+	end
+	for i=1,#toRemove do
+		table.remove(players, toRemove[i].index)
 	end
 end

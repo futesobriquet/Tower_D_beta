@@ -2,14 +2,15 @@ local class = require('lib.30log.30log')
 local search = require('search')
 require('constants')
 
-Character = class { grid_x = 2, grid_y = 2, x = 2 * cellSize, y = 2 * cellSize, speed = 1}
+Character = class { grid_x = 2, grid_y = 2, x = 2 * cellSize, y = 2 * cellSize, speed = 1, health = 10}
 
-function Character:__init(x,y,speed)
+function Character:__init(x,y,speed,health)
   self.x,self.y = x,y
   self.speed = speed
   self.grid_x = x / cellSize
   self.grid_y = y / cellSize
   self.destination = {x = self.grid_x, y = self.grid_y}
+  self.health = health
   self.orientation = 0
 end
 
@@ -297,4 +298,18 @@ end
 
 function Character:getOrientation()
 	return self.orientation
+end
+
+function Character:takeDamage(damage, damageType)
+	self.health = self.health - damage
+end
+
+function Character:render()
+	local width = self:getImage():getWidth()
+	local height = self:getImage():getHeight()
+	love.graphics.setColor(20, 20, self.speed, 255)
+	love.graphics.draw(self:getImage(), self.x + cellSize/2, self.y + cellSize/2, self:getOrientation(), 1, 1, width / 2, height / 2)
+	love.graphics.setColor(0, 200, 0, 255)
+	love.graphics.print(self.health, self.x + cellSize/4, self.y + cellSize/4)
+	love.graphics.setColor(255, 255, 255, 255)
 end

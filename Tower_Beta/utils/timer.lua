@@ -27,9 +27,9 @@ function Timer:tick(dt)
 	self.elapsed = self.elapsed + dt
 	if self.elapsed >= self.interval then
 		if self.args == nil then
-			self.callback()
+			self:callback()
 		else
-			self.callback(self.args)
+			self:callback(self.args)
 		end
 		self.elapsed = 0
 	end
