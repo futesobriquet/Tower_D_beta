@@ -2,9 +2,15 @@ local class = require('lib.30log.30log')
 require('character')
 require('cell')
 require('constants')
+require('utils.timer')
 
 function love.load()
-	player = Character:new(cellSize * 2, cellSize * 2,100)
+	players = {}
+	numPlayers = 1
+	for i=1,numPlayers do
+		players[i] = Character:new(cellSize * 2, cellSize * 2, 50 + (i - 1))
+		players[i]:setImage("img/Arrow.png")
+	end
 	mapSize = { x = 13, y = 13 }
 	
 	walls = {
@@ -41,15 +47,33 @@ function love.load()
             end
         end
     end
+	timer = Timer:new(0.3, addCharacter, nil)
+	timer:start()
+end
+
+function addCharacter()
+	local p = Character:new(cellSize * 2, cellSize * 2,50 + (200 * math.random()))
+	p:setImage("img/Arrow.png")
+	table.insert(players, p)
+	numPlayers = numPlayers + 1
+	p:moveTo(map[12][12], map)
 end
 
 function love.update(dt)
-	player:moveAlongPath(dt, map)
+	--timer:update(dt)
+	for i=1,numPlayers do
+		players[i]:moveAlongPath(dt, map)
+	end		
 end
 
 function love.draw()
-    love.graphics.rectangle("fill", player.x, player.y, cellSize, cellSize)
-    for x=1, mapSize.x do
+	for i=1,numPlayers do
+		local player = players[i]
+		local width = player:getImage():getWidth()
+		local height = player:getImage():getHeight()
+		love.graphics.draw(player:getImage(), player.x + cellSize/2, player.y + cellSize/2, player:getOrientation(), 1, 1, width / 2, height / 2)
+    end
+	for x=1, mapSize.x do
         for y=1, mapSize.y do
 			cell = map[x][y]
             if cell.occupied == true then
@@ -61,17 +85,19 @@ end
 
 function love.mousereleased(x, y, button)
 	if button == 'l' then
-		gridX = math.floor(x/32)
-		gridY = math.floor(y/32)
+		gridX = math.floor(x/cellSize)
+		gridY = math.floor(y/cellSize)
 		clickedCell = map[gridX][gridY]
 		clickedCell.occupied = not clickedCell.occupied
 	end
 	if button == 'r' then
-		gridX = math.floor(x/32)
-		gridY = math.floor(y/32)
+		gridX = math.floor(x/cellSize)
+		gridY = math.floor(y/cellSize)
 		clickedCell = map[gridX][gridY]
 		if clickedCell.occupied ~= true then
-			player:moveTo(clickedCell, map)
+			for i=1,numPlayers do
+				players[i]:moveTo(clickedCell, map)
+			end
 		end
 	end
 end

@@ -4,20 +4,23 @@ require('constants')
 
 Character = class { grid_x = 2, grid_y = 2, x = 2 * cellSize, y = 2 * cellSize, speed = 1}
 
-local movementTollerance = 0.02
-
 function Character:__init(x,y,speed)
   self.x,self.y = x,y
   self.speed = speed
   self.grid_x = x / cellSize
   self.grid_y = y / cellSize
   self.destination = {x = self.grid_x, y = self.grid_y}
+  self.orientation = 0
 end
 
 function Character:moveTo(cell, map)
+	if map == nil then
+		return
+	end
+	
 	if self.path == nil then
 		self.destination = cell
-		local path = search.findShortestPath(map[math.floor(self.x/cellSize)][math.floor(self.y/cellSize)], cell, map)
+		local path = search.findShortestPath(map[math.floor(self.x/cellSize)][math.floor(self.y/cellSize)], cell, map, {x = self.x, y = self.y})
 		if path ~= nil then
 			self:setPath(path, true)
 		end
@@ -76,6 +79,57 @@ function Character:setPath(p, reset)
 		end
 	end
 	table.insert(self.pathList, makePathSegment(self.path, start, #self.path, last_dx, last_dy, self.pathList[#self.pathList]))
+	--self:addSmoothCurvesToPath()
+	--print('pathList length: ' .. #self.pathList)
+end
+
+function Character:addSmoothCurvesToPath()
+	local newArcs = {}
+	for i=1,#self.pathList-1 do
+		local segment = self.pathList[i]
+		local nextSegment = self.pathList[i + 1]
+		local dx = segment.endPoint.x - segment.startPoint.x
+		local dy = segment.endPoint.y - segment.startPoint.y
+		local next_dx = nextSegment.endPoint.x - nextSegment.startPoint.x
+		local next_dy = nextSegment.endPoint.y - nextSegment.startPoint.y
+		if dx > 0 then
+			segment.endPoint.x = segment.endPoint.x - 0.5
+			if next_dy > 0 then
+				nextSegment.startPoint.y = nextSegment.startPoint.y + 0.5
+			elseif next_dy < 0 then
+				nextSegment.startPoint.y = nextSegment.startPoint.y - 0.5
+			end
+		elseif dx < 0 then
+			segment.endPoint.x = segment.endPoint.x + 0.5
+			if next_dy > 0 then
+				nextSegment.startPoint.y = nextSegment.startPoint.y + 0.5
+			elseif next_dy < 0 then
+				nextSegment.startPoint.y = nextSegment.startPoint.y - 0.5
+			end
+		elseif dy > 0 then
+			segment.endPoint.y = segment.endPoint.y - 0.5
+			if next_dx > 0 then
+				nextSegment.startPoint.x = nextSegment.startPoint.x + 0.5
+			elseif next_dx < 0 then
+				nextSegment.startPoint.x = nextSegment.startPoint.x - 0.5
+			end
+		elseif dy < 0 then
+			segment.endPoint.y = segment.endPoint.y + 0.5
+			if next_dx > 0 then
+				nextSegment.startPoint.x = nextSegment.startPoint.x + 0.5
+			elseif next_dx < 0 then
+				nextSegment.startPoint.x = nextSegment.startPoint.x - 0.5
+			end
+		end
+		segment.length = segment.length - (cellSize/2)
+		nextSegment.length = nextSegment.length - (cellSize/2)
+		nextSegment.dist = segment.dist + segment.length + (math.pi * (cellSize/2))
+		--print('segment start: ' .. segment.startPoint.x .. ', ' .. segment.startPoint.y)
+		table.insert(newArcs, {index = i, segment = makeCircularPathSegment(segment.endPoint, nextSegment.startPoint, dx, dy, segment)})
+	end
+	for i=1,#newArcs do
+		table.insert(self.pathList, newArcs[i].index + 1, newArcs[i].segment)
+	end
 end
 
 function Character:moveAlongPath(dt, map)
@@ -103,7 +157,7 @@ function Character:moveAlongPath(dt, map)
 		end
 	else
 		if ((math.floor(self.x / cellSize) ~= self.destination.x) or (math.floor(self.y / cellSize) ~= self.destination.y)) then
-			self:setPath(search.findShortestPath(map[math.floor(self.x/cellSize)][math.floor(self.y/cellSize)], self.destination, map), true)
+			self:setPath(search.findShortestPath(map[math.floor(self.x/cellSize)][math.floor(self.y/cellSize)], self.destination, map, {x = self.x, y = self.y}), true)
 		end	
 	end
 end
@@ -113,8 +167,12 @@ function Character:calculateNextPathPosition(dt)
 	local totalDist = math.abs((self.totalX)) + math.abs((self.totalY)) + dist
 	local segment = self:findSegmentInPath(totalDist)
 	if segment ~= nil then
+		--print ('prev dist: ' .. segment.dist)
 		local diff = totalDist - segment.dist
+		--print('diff: ' .. diff)
 		local dir = segment.callback(diff)
+		--print('dirx: ' .. dir.x .. ', diry: ' .. dir.y)
+		self:calculateOrientation(dir)
 		return {x = (segment.startPoint.x * cellSize) + dir.x, y = (segment.startPoint.y * cellSize) + dir.y}
 	else 
 		segment = self.pathList[#self.pathList]
@@ -143,8 +201,8 @@ end
 
 function makePathSegment(path, startIndex, endIndex, dx, dy, prevSegment)
 	local length = (math.abs(path[endIndex].x - path[startIndex].x) * cellSize) + (math.abs(path[endIndex].y - path[startIndex].y) * cellSize)
-	local startPoint = path[startIndex]
-	local endPoint = path[endIndex]
+	local startPoint = {x = path[startIndex].x, y = path[startIndex].y}
+	local endPoint = {x = path[endIndex].x, y = path[endIndex].y}
 	local dist
 	if prevSegment then
 		dist = prevSegment.dist + prevSegment.length
@@ -164,6 +222,47 @@ function makePathSegment(path, startIndex, endIndex, dx, dy, prevSegment)
 	return {startPoint = startPoint, endPoint = endPoint, length = length, callback = callback, dist = dist}
 end
 
+function makeCircularPathSegment(startPoint, endPoint, dx, dy, prevSegment)
+	print('making circular path segment')
+	local radius = (cellSize / 2)
+	local length = (math.pi / 2) * radius
+	local startPoint = startPoint
+	local endPoint = endPoint
+	local dist
+	if prevSegment ~= nil then
+		dist = prevSegment.dist + prevSegment.length
+	else
+		dist = 0
+	end
+	local callback
+	if dx == -1 then
+		if startPoint.y > endPoint.y and startPoint.x > endPoint.x then
+			callback = function(dt) return {x = -((cellSize / 2) * math.sin(dt/(cellSize/2))), y = (cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2)))} end
+		elseif startPoint.x > endPoint.x and startPoint.y < endPoint.y then
+			callback = function(dt) return {x = (cellSize / 2) * math.sin(dt/(cellSize/2)), y = -((cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2))))} end
+		end
+	elseif dx == 1 then
+		if startPoint.x < endPoint.x and startPoint.y > endPoint.y then
+			callback = function(dt) return {x = (cellSize / 2) * math.sin(dt/(cellSize/2)), y = -((cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2))))} end
+		elseif startPoint.x < endPoint.x and startPoint.y < endPoint.y then
+			callback = function(dt) return {x = (cellSize / 2) * math.sin(dt/(cellSize/2)), y = (cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2)))} end
+		end
+	elseif dy == -1 then
+		if startPoint.x < endPoint.x and startPoint.y > endPoint.y then
+			callback = function(dt) return {y = -((cellSize / 2) * math.sin(dt/(cellSize/2))), x = (cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2)))} end
+		elseif startPoint.x > endPoint.x and startPoint.y > endPoint.y then
+			callback = function(dt) return {y = -((cellSize / 2) * math.sin(dt/(cellSize/2))), x = -((cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2))))} end
+		end
+	else
+		if startPoint.x < endPoint.x and startPoint.y < endPoint.y then
+			callback = function(dt) return {y = (cellSize / 2) * math.sin(dt/(cellSize/2)), x = (cellSize/2) - ((cellSize/2) * (math.cos(dt/(cellSize/2))))} end
+		elseif startPoint.x > endPoint.x and startPoint.y < endPoint.y then
+			callback = function(dt) return {y = (cellSize / 2) * math.sin(dt/(cellSize/2)), x = -((cellSize/2) - ((cellSize/2) * math.cos(dt/(cellSize/2))))} end
+		end
+	end
+	return {startPoint = startPoint, endPoint = endPoint, length = length, callback = callback, dist = dist}
+end
+
 function findIndexInPath(gx, gy, path)
 	for i=1, #path do
 		if path[i].x == gx and path[i].y == gy then
@@ -171,4 +270,31 @@ function findIndexInPath(gx, gy, path)
 		end
 	end
 	return -1
+end
+
+function Character:calculateOrientation(dir)
+	local dx, dy
+	if dir.x == 0 then
+		dx = dir.x
+	else
+		dx = dir.x / math.abs(dir.x)
+	end
+	if dir.y == 0 then
+		dy = dir.y
+	else
+		dy = dir.y / math.abs(dir.y)
+	end
+	self.orientation = math.atan2(dy, dx)
+end
+
+function Character:setImage(imagePath)
+	self.image = love.graphics.newImage(imagePath)
+end
+
+function Character:getImage()
+	return self.image
+end
+
+function Character:getOrientation()
+	return self.orientation
 end

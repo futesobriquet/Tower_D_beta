@@ -1,7 +1,7 @@
 local manhattanDistance, findMinInSet, buildPath 
 search = {
 	--param 1 : Cell, param 2 : Cell
-	findShortestPath = function (start, goal, grid)
+	findShortestPath = function (start, goal, grid, charPos)
 		local toSearch = {}
 		toSearch[start] = true
 		local gScores = {}
@@ -13,7 +13,7 @@ search = {
 		while next(toSearch) ~= nil do
 			local cur = findMinInSet(fScores, visited)
 			if cur.x == goal.x and cur.y == goal.y then
-				return buildPath(cur, previous, start)
+				return buildPath(cur, previous, start, charPos)
 			end
 			toSearch[cur] = nil
 			visited[cur] = true
@@ -63,14 +63,15 @@ function findMinInSet(set, visited)
 	return toReturn
 end
 
-function buildPath(node, previous, start)
+function buildPath(node, previous, start, charPos)
 	local path = {}
 	local curNode = node
 	while curNode ~= nil do
 		table.insert(path, curNode)
 		curNode = previous[curNode]
 	end
-	table.insert(path, start)
+	--table.insert(path, start)
+	table.insert(path, {charPos.x/cellSize, charPos.y/cellSize})
 	local size = #path
 	local newPath = {}
 	
