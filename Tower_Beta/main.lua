@@ -1,14 +1,16 @@
 local class = require('lib.30log.30log')
-require('character')
+require('characters.character')
+require('characters.testArrowCharacter')
 require('cell')
 require('constants')
 require('utils.timer')
-require('tower')
+require('towers.tower')
 
 function love.load()
 	players = {}
 	towers = {}
 	numPlayers = 0
+	move = 0
 
 	mapSize = { x = 13, y = 13 }
 	
@@ -46,6 +48,15 @@ function love.load()
             end
         end
     end
+	
+	G = love.graphics
+    shader = G.newShader("graphics/shaders/illuminate.glsl")
+    diffuseBuffer = G.newCanvas(800, 600)
+    diffuseBuffer:setFilter("nearest", "nearest")
+	G.setBackgroundColor(0, 0, 0)
+	mapTile = G.newImage('graphics/img/test_map_tiny.png')
+	mapTileNormal = G.newImage('graphics/img/test_normal_map_tiny.png')
+   
 	tower = Tower:new(5*cellSize,4*cellSize,3,1,2,'Normal', map, players)
 	table.insert(towers, tower)
 	timer = Timer:new(0.3, addCharacter, nil)
@@ -53,8 +64,7 @@ function love.load()
 end
 
 function addCharacter()
-	local p = Character:new(cellSize * 2, cellSize * 2,50 + (200 * math.random()))
-	p:setImage("img/Arrow.png")
+	local p = TestArrowCharacter:new(cellSize * 2, cellSize * 2)
 	table.insert(players, p)
 	numPlayers = numPlayers + 1
 	p:moveTo(map[12][12], map)
@@ -72,20 +82,42 @@ function love.update(dt)
 end
 
 function love.draw()
+	G.setColor(255, 255, 255, 255)
+	shader:send('LightColor', {.6, .1, .1}, {.1, .1, .6})
+	shader:send('LightPos', {300+ 200 * math.sin(move/20), 200, 5}, {300+ 200 * math.sin(move/15), 400, 3})
+	shader:send('numLights', 2)
+	shader:send('useNormalMap', false)
+	G.setShader(shader)
+	render(G, shader)
+	G.setShader()
+	renderHUD(G, nil)
+	move = move + 1
+end
+
+function render(G, shader)
 	for i=1,#players do
-		players[i]:render()
+		players[i]:render(G, shader)
     end
+	shader:send('useNormalMap', true)
+	shader:send('normalTexture', mapTileNormal)
 	for x=1, mapSize.x do
         for y=1, mapSize.y do
 			cell = map[x][y]
             if cell.occupied == true then
-				love.graphics.rectangle("line", x * cellSize, y * cellSize, cellSize, cellSize)
+				G.draw(mapTile, x * cellSize, y * cellSize)
 			end
         end
     end
+	shader:send('useNormalMap', false)
 	for i=1,#towers do
-		towers[i]:render()
+		towers[i]:render(G)
 	end
+end
+
+function renderHUD(G, shader)
+	for i=1,#players do
+		players[i]:renderHUD(G, shader)
+    end
 end
 
 function love.mousereleased(x, y, button)
