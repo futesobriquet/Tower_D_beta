@@ -1,4 +1,5 @@
-local manhattanDistance, findMinInSet, buildPath 
+require('utils.distanceCalcs')
+local findMinInSet, buildPath 
 search = {
 	--param 1 : Cell, param 2 : Cell
 	findShortestPath = function (start, goal, grid, charPos)
@@ -44,12 +45,6 @@ search = {
 		print(s)
 	end
 }
-
-function manhattanDistance(startCell, endCell)
-	local dx = endCell.x - startCell.x
-	local dy = endCell.y -  startCell.y
-	return math.abs(dx) + math.abs(dy)
-end
 
 function findMinInSet(set, visited)
 	local minimum = 100000

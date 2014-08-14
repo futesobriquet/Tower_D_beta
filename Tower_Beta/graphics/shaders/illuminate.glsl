@@ -47,13 +47,13 @@ vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords 
 		vec3 N = normal;
 		vec3 L = normalize(LightDir);
 
-		Diffuse += vec4((color.rgb) * max(dot(N, L), 0.0), DiffuseColor.a);
+		Diffuse = vec4((color.rgb) * max(dot(N, L), 0.0), DiffuseColor.a);
 
 		float Attenuation = 100.0 / D;
 
-		Intensity += Diffuse * Attenuation;
+		Intensity += (Diffuse * Attenuation);
 		
 	}
-	FinalColor += DiffuseColor.rgba * Intensity;
+	FinalColor += (DiffuseColor.rgba * Intensity);
     return (FinalColor);
 }

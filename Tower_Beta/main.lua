@@ -1,6 +1,7 @@
 local class = require('lib.30log.30log')
 require('characters.character')
 require('characters.testArrowCharacter')
+require('towers.testCannonTower')
 require('cell')
 require('constants')
 require('utils.timer')
@@ -53,11 +54,11 @@ function love.load()
     shader = G.newShader("graphics/shaders/illuminate.glsl")
     diffuseBuffer = G.newCanvas(800, 600)
     diffuseBuffer:setFilter("nearest", "nearest")
-	G.setBackgroundColor(0, 0, 0)
+	G.setBackgroundColor(0, 10, 100)
 	mapTile = G.newImage('graphics/img/test_map_tiny.png')
 	mapTileNormal = G.newImage('graphics/img/test_normal_map_tiny.png')
    
-	tower = Tower:new(5*cellSize,4*cellSize,3,1,2,'Normal', map, players)
+	tower = TestCannonTower:new(5*cellSize, 4*cellSize, map, players)
 	table.insert(towers, tower)
 	timer = Timer:new(0.3, addCharacter, nil)
 	timer:start()
@@ -83,10 +84,9 @@ end
 
 function love.draw()
 	G.setColor(255, 255, 255, 255)
-	shader:send('LightColor', {.6, .1, .1}, {.1, .1, .6})
-	shader:send('LightPos', {300+ 200 * math.sin(move/20), 200, 5}, {300+ 200 * math.sin(move/15), 400, 3})
-	shader:send('numLights', 2)
-	shader:send('useNormalMap', false)
+	shader:send('LightColor', {.6, .1, .1}, {.6, .1, .1}, {.6, .1, .1}, {.6, .1, .1}, {.6, .1, .1}, {.6, .1, .1})
+	shader:send('LightPos', {300+ 200 * math.sin(move/20), 200, 3}, {300+ 200 * math.sin(move/15), 250, 3},{300+ 200 * math.sin(move/16), 350, 3}, {300+ 200 * math.sin(move/17), 400, 3}, {300+ 200 * math.sin(move/18), 450, 3}, {300+ 200 * math.sin(move/19), 200, 3})
+	shader:send('numLights', 6)
 	G.setShader(shader)
 	render(G, shader)
 	G.setShader()
@@ -95,9 +95,7 @@ function love.draw()
 end
 
 function render(G, shader)
-	for i=1,#players do
-		players[i]:render(G, shader)
-    end
+
 	shader:send('useNormalMap', true)
 	shader:send('normalTexture', mapTileNormal)
 	for x=1, mapSize.x do
@@ -109,6 +107,9 @@ function render(G, shader)
         end
     end
 	shader:send('useNormalMap', false)
+	for i=1,#players do
+		players[i]:render(G, shader)
+    end
 	for i=1,#towers do
 		towers[i]:render(G)
 	end
@@ -125,7 +126,11 @@ function love.mousereleased(x, y, button)
 		gridX = math.floor(x/cellSize)
 		gridY = math.floor(y/cellSize)
 		clickedCell = map[gridX][gridY]
-		clickedCell.occupied = not clickedCell.occupied
+		if clickedCell.occupied ~= true then
+			local tower = TestCannonTower:new(gridX * cellSize,gridY * cellSize, map, players)
+			table.insert(towers, tower)
+			clickedCell.occupied = true
+		end
 	end
 	if button == 'r' then
 		gridX = math.floor(x/cellSize)
@@ -142,7 +147,7 @@ end
 function updateCreepList()
 	toRemove = {}
 	for i=#players,1,-1 do
-		if players[i].health == 0 then
+		if players[i].health <= 0 then
 			table.insert(toRemove, {index = i})
 		end
 	end

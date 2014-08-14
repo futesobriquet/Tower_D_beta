@@ -1,6 +1,7 @@
 local class = require('lib.30log.30log')
 local search = require('utils.search')
 require('constants')
+require('utils.animation')
 
 Character = class { grid_x = 2, grid_y = 2, x = 2 * cellSize, y = 2 * cellSize, speed = 1, health = 10}
 
@@ -12,8 +13,12 @@ function Character:__init(x,y,speed,health)
   self.destination = {x = self.grid_x, y = self.grid_y}
   self.health = health
   self.orientation = 0
-  self.animations = {}
   self.currentAnimation = nil
+end
+
+function Character:resetAnimation()
+	self.currentAnimation:pauseAtStart()
+	self.currentAnimation = nil
 end
 
 function Character:moveTo(cell, map)
@@ -315,6 +320,7 @@ end
 
 function Character:takeDamage(damage, damageType)
 	self.health = self.health - damage
+	self:animate('hit')	
 end
 
 function Character:render(G, shader)
@@ -324,9 +330,11 @@ function Character:render(G, shader)
 		shader:send('useNormalMap', true)
 		shader:send('normalTexture', self.normalMap)
 	end
-	if self.currentAnimation == nil then
-		G.draw(self:getImage(), self.x + cellSize/2, self.y + cellSize/2, self:getOrientation(), 1, 1, width / 2, height / 2)
-	else
+	
+	G.draw(self:getImage(), self.x + cellSize/2, self.y + cellSize/2, self:getOrientation(), 1, 1, width / 2, height / 2)
+	if self.currentAnimation ~= nil then
+		local width = self.currentAnimation.fw
+		local height = self.currentAnimation.fh
 		self.currentAnimation:render(G, self.x + cellSize/2, self.y + cellSize/2, self:getOrientation(), 1, 1, width / 2, height / 2)
 	end
 	shader:send('useNormalMap', false)
@@ -339,6 +347,7 @@ end
 
 function Character:animate(animation)
 	self.currentAnimation = self.animations[animation]
+	self.currentAnimation.anim:resume()
 end
 
 function Character:stopAnimation()

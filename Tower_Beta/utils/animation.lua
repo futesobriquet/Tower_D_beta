@@ -3,10 +3,10 @@ local anim8 = require('lib.anim8.anim8')
 
 Animation = class { image = nil, frameWidth = 0, frameHeight = 0, duration = 0}
 
-function Animation:__init(image, fw, fh, duration, loops, ...)
+function Animation:__init(image, fw, fh, duration, loops, onLoop, ...)
 	self.image = love.graphics.newImage(image)
-	self.imageWidth = image:getWidth()
-	self.imageHeight = image:getHeight()
+	self.imageWidth = self.image:getWidth()
+	self.imageHeight = self.image:getHeight()
 	self.duration = duration
 	self.fw = fw
 	self.fh = fh
@@ -14,7 +14,7 @@ function Animation:__init(image, fw, fh, duration, loops, ...)
 	if loops == true then
 		self.anim = anim8.newAnimation(self.grid(...), self.duration)
 	else
-		self.anim = anim8.newAnimation(self.grid(...), self.duration, 'pauseAtEnd')
+		self.anim = anim8.newAnimation(self.grid(...), self.duration, onLoop)
 	end
 end
 
